@@ -2,6 +2,7 @@ package com.github.aldychris.mobiusexample
 
 import com.spotify.mobius.Connection
 import com.spotify.mobius.functions.Consumer
+import io.reactivex.Observable
 
 internal object CounterEffectHandler {
     @JvmStatic
@@ -13,8 +14,17 @@ internal object CounterEffectHandler {
                 }
             }
 
-            override fun dispose() { // No resources to release, so we can leave this empty.
+            override fun dispose() {
+                // No resources to release, so we can leave this empty.
             }
         }
+    }
+
+    @JvmStatic
+    fun rxEffectHandler(effects: Observable<CounterEffect>): Observable<CounterEvent> {
+        return effects.ofType(ReportError.javaClass)
+            .flatMap {
+                Observable.just(InputError(it))
+            }
     }
 }
