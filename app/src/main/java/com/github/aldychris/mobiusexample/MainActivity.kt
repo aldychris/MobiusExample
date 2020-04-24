@@ -1,64 +1,95 @@
 package com.github.aldychris.mobiusexample
 
+import android.R.attr.button
 import android.os.Bundle
-import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.github.aldychris.mobiusexample.util.SubtypeEffectHandlerBuilder
 import com.github.aldychris.mobiusexample.util.loopFactory
-import com.github.aldychris.mobiusexample.util.updateWrapper
-import com.spotify.mobius.*
+import com.jakewharton.rxbinding3.view.clicks
+import com.spotify.mobius.Connection
+import com.spotify.mobius.MobiusLoop
 import com.spotify.mobius.android.AndroidLogger
 import com.spotify.mobius.android.MobiusAndroid
 import com.spotify.mobius.functions.Consumer
-import com.spotify.mobius.rx2.RxMobius
+import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.annotations.NonNull
+import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var loop: MobiusLoop<Int, CounterEvent?, CounterEffect>
+    private lateinit var mobiusController: MobiusLoop.Controller<Int, CounterEvent>
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val rxEffectHandler: ObservableTransformer<CounterEffect, CounterEvent?> = SubtypeEffectHandlerBuilder<CounterEffect, CounterEvent?>()
+        val rxEffectHandler: ObservableTransformer<CounterEffect, CounterEvent> = SubtypeEffectHandlerBuilder<CounterEffect, CounterEvent>()
             .addConsumer<ReportError>({
                 showErrorMessage()
             }, AndroidSchedulers.mainThread())
             .build()
 
-        loop = RxMobius.loop(updateWrapper(CounterLogic::updateWithEffect), rxEffectHandler)
-            .startFrom(2)
 
-        loop.observe(Consumer { counter: Int ->
-            tvCounter.text = counter.toString()
-        })
+        mobiusController = createController(rxEffectHandler, 2)
+        mobiusController.connect(this::connectViews)
+
+        if (savedInstanceState != null) {
+            val value = savedInstanceState.getInt("value")
+            mobiusController.replaceModel(value)
+        }
+    }
+
+    private fun connectViews(eventConsumer: Consumer<CounterEvent>): Connection<Int?> {
+        btnPlus.setOnClickListener { eventConsumer.accept(Up) }
+        btnMinus.setOnClickListener { eventConsumer.accept(Down) }
+        return object : Connection<Int?> {
+            override fun accept(model: Int?) {
+                tvCounter.text = model.toString()
+            }
+
+            override fun dispose() {
+                btnPlus.setOnClickListener(null)
+                btnMinus.setOnClickListener(null)
+            }
+        }
     }
 
     private fun showErrorMessage() {
         Toast.makeText(this, "Minus value", Toast.LENGTH_LONG).show()
     }
 
-    fun btnPlusClicked(view: View?) {
-        loop.dispatchEvent(Up)
+    override fun onResume() {
+        super.onResume()
+        mobiusController.start()
     }
 
-    fun btnMinClicked(view: View?) {
-        loop.dispatchEvent(Down)
-    }
-
-    override fun onStop() {
-        loop.dispose()
+    override fun onPause() {
         super.onStop()
+        mobiusController.stop()
     }
 
     override fun onDestroy() {
-        loop.dispose()
         super.onDestroy()
+        mobiusController.disconnect()
     }
 
+    override fun onSaveInstanceState(@NonNull outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        val model = mobiusController.model
+        outState.putInt("value", model)
+    }
+
+    private fun createController(effectHandlers: ObservableTransformer<CounterEffect, CounterEvent>, defaultModel: Int): MobiusLoop.Controller<Int, CounterEvent> {
+        return MobiusAndroid.controller(createLoop(effectHandlers), defaultModel)
+    }
+
+    private fun createLoop(effectHandlers: ObservableTransformer<CounterEffect, CounterEvent>): MobiusLoop.Factory<Int, CounterEvent, CounterEffect> {
+        return loopFactory(CounterLogic::updateWithEffect, effectHandlers)
+            .logger(AndroidLogger.tag("Counter App"))
+    }
 }
