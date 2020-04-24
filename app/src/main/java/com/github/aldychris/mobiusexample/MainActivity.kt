@@ -12,6 +12,7 @@ import com.spotify.mobius.MobiusLoop
 import com.spotify.mobius.android.AndroidLogger
 import com.spotify.mobius.android.MobiusAndroid
 import com.spotify.mobius.functions.Consumer
+import com.spotify.mobius.rx2.RxConnectables
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -36,7 +37,7 @@ class MainActivity : AppCompatActivity() {
 
 
         mobiusController = createController(rxEffectHandler, 2)
-        mobiusController.connect(this::connectViews)
+        mobiusController.connect(RxConnectables.fromTransformer(this::connectViews))
 
         if (savedInstanceState != null) {
             val value = savedInstanceState.getInt("value")
@@ -44,19 +45,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun connectViews(eventConsumer: Consumer<CounterEvent>): Connection<Int?> {
-        btnPlus.setOnClickListener { eventConsumer.accept(Up) }
-        btnMinus.setOnClickListener { eventConsumer.accept(Down) }
-        return object : Connection<Int?> {
-            override fun accept(model: Int?) {
-                tvCounter.text = model.toString()
-            }
+    private fun connectViews(models: Observable<Int>): Observable<CounterEvent> {
+        val disposables = CompositeDisposable()
+        disposables.add(models.subscribe { model ->
+            tvCounter.text = model.toString()
+        })
 
-            override fun dispose() {
-                btnPlus.setOnClickListener(null)
-                btnMinus.setOnClickListener(null)
-            }
-        }
+        return Observable.mergeArray(
+            btnPlus.clicks().map { Up },
+            btnMinus.clicks().map { Down }
+        ).doOnDispose(disposables::dispose)
     }
 
     private fun showErrorMessage() {

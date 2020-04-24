@@ -18,17 +18,14 @@
  */
 package com.github.aldychris.mobiusexample.util
 
-import com.spotify.mobius.Connectable
-import com.spotify.mobius.Connection
-import com.spotify.mobius.Next
-import com.spotify.mobius.Update
+import com.spotify.mobius.*
 import com.spotify.mobius.functions.Consumer
 import com.spotify.mobius.rx2.RxMobius
 import io.reactivex.ObservableTransformer
 
 fun <M, E, F> updateWrapper(u: (M, E) -> Next<M, F>): Update<M, E, F> = Update { m: M, e: E -> u(m, e) }
 
-fun <M, E, F> loopFactory(u: (M, E) -> Next<M, F>, fh: ObservableTransformer<F, E>) = RxMobius.loop(
+fun <M, E, F> loopFactory(u: (M, E) -> Next<M, F>, fh: ObservableTransformer<F, E>): MobiusLoop.Builder<M, E, F> = RxMobius.loop(
     updateWrapper(u), fh)
 
 class PartialConnection<T>(val onModelChange: (T) -> Unit) {

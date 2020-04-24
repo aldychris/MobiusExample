@@ -1,7 +1,5 @@
 package com.github.aldychris.mobiusexample.util
 
-import com.github.aldychris.mobiusexample.CounterEvent
-import com.github.aldychris.mobiusexample.ReportError
 import com.spotify.mobius.rx2.RxMobius
 import io.reactivex.ObservableTransformer
 import io.reactivex.Scheduler
