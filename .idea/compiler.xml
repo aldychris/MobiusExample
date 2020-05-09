@@ -2,7 +2,10 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <excludeFromCompile>
-      <directory url="file://$USER_HOME$/DevelopmentArea/Android/AndSourceCodes/OlxMvp/atlas-android-appbase" includeSubdirectories="true" />
+      <directory url="file://$PROJECT_DIR$/../../../OlxMvp/atlas-android-appbase" includeSubdirectories="true" />
     </excludeFromCompile>
+    <bytecodeTargetLevel>
+      <module name="MobiusExample.app" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
 </project>

@@ -9,7 +9,7 @@ internal object CounterEffectHandler {
     fun effectHandler(eventConsumer: Consumer<CounterEvent?>?): Connection<CounterEffect> {
         return object : Connection<CounterEffect> {
             override fun accept(effect: CounterEffect) {
-                if (effect === ReportError) {
+                if (effect === IsError) {
                     println("error!")
                 }
             }
@@ -22,7 +22,7 @@ internal object CounterEffectHandler {
 
     @JvmStatic
     fun rxEffectHandler(effects: Observable<CounterEffect>): Observable<CounterEvent> {
-        return effects.ofType(ReportError.javaClass)
+        return effects.ofType(IsError.javaClass)
             .flatMap {
                 Observable.just(InputError(it))
             }

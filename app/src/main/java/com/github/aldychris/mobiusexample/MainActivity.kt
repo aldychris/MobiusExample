@@ -1,17 +1,14 @@
 package com.github.aldychris.mobiusexample
 
-import android.R.attr.button
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.github.aldychris.mobiusexample.util.SubtypeEffectHandlerBuilder
 import com.github.aldychris.mobiusexample.util.loopFactory
 import com.jakewharton.rxbinding3.view.clicks
-import com.spotify.mobius.Connection
 import com.spotify.mobius.MobiusLoop
 import com.spotify.mobius.android.AndroidLogger
 import com.spotify.mobius.android.MobiusAndroid
-import com.spotify.mobius.functions.Consumer
 import com.spotify.mobius.rx2.RxConnectables
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
@@ -30,7 +27,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val rxEffectHandler: ObservableTransformer<CounterEffect, CounterEvent> = SubtypeEffectHandlerBuilder<CounterEffect, CounterEvent>()
-            .addConsumer<ReportError>({
+            .addConsumer<IsError>({
                 showErrorMessage()
             }, AndroidSchedulers.mainThread())
             .build()

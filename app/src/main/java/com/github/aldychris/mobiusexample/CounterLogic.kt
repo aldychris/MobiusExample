@@ -13,7 +13,7 @@ internal object CounterLogic {
                 return if (counter > 0) {
                     Next.next(counter - 1)
                 } else {
-                    Next.next(counter,Effects.effects(ReportError))
+                    Next.next(counter,Effects.effects(IsError))
                 }
             }
             else -> Next.next(counter)
